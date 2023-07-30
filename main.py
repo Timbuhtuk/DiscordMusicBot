@@ -1,18 +1,15 @@
 import discord
 from discord.ext import commands
 
-import os
 import asyncio
 
 from music_cog import music_cog_arr
-from music_cog import music_cog
 from help_cog import help_cog
 import Config
 
 intents = discord.Intents.all()
 
 bot = commands.Bot(command_prefix=Config.command_tag,intents=intents,help_command=None)
-Ready = False
 
 
 async def setup():
@@ -21,7 +18,7 @@ async def setup():
     print(bot.cogs)
     await bot.start(Config.token)
 
-
+discord.utils.setup_logging()
 asyncio.run(setup())
 
 

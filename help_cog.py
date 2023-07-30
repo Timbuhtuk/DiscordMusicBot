@@ -17,15 +17,21 @@ class help_cog(commands.Cog):
         print(cn.ready)
         #await self.send_to_all(self.help_massage)
     
+
+    async def get_oauth_url(self):
+        try:
+            data = await self.bot.application_info()
+        except AttributeError:
+            return False
+        return discord.utils.oauth_url(data.id)
+
     async def send_to_all(self,msg):
         for text_channel in self.text_channel_text:
             await text_channel.send(msg)
 
-    @commands.command(name = "help",aliases = ["h",'VLADlox'], help = "help")
+    @commands.command(name = "help",aliases = ["h"], help = "help")
     async def help(self,ctx):
         print("[INF][CM][Help] help CALLED")
-        await ctx.send(self.help_message)
-    
-    @commands.command(name="test",aliases=["t"],help="")
-    async def test(self, ctx, *args):
-        vc = await ctx.author.voice.channel.connect()
+        url = await self.get_oauth_url()
+        await ctx.send(self.help_message+'\n```'+url+'```')
+
