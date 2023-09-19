@@ -1,12 +1,7 @@
 import discord
 from discord.ext import commands
 
-from colorama import init
-init()
-from colorama import Fore,Style,Back
-
-from yt_dlp import YoutubeDL as YDL
-from pytube import YouTube
+import pytube as pt
 
 import os
 import Config as cn
@@ -77,12 +72,32 @@ class music_cog(commands.Cog):
   
         
 
+class cache():
+    def __init__(self):
+        self.Cache = {}
+
+    def check(self,key):
+
+        logs.add_log('i','[DF][CHECK] Check called')
+        try:
+            var = self.Cache[key]
+            return var
+        except Exception as e:
+            logs.add_log('w',f'[DF][CHECK] {e}')
+            return None
+    def add(self,key,value):
+        logs.add_log('i','[DF][ADD] Add called')
+        self.Cache[key]=value
+ 
+
+        
+
 
 
 class music_client():
     def __init__(self,bot):
         self.bot = bot 
-
+        self.cache = cache()
         self.is_playing = False
         self.is_paused = False
 
@@ -100,7 +115,7 @@ class music_client():
    
     
     def download(self,item):
-        video = YouTube(item)
+        video = item
         
         title = video.title
         for i in self.special_char:
@@ -109,39 +124,47 @@ class music_client():
         if not os.path.exists(self.path+title.lower()+"1.mp3"):
             logs.add_log('i', "[DF][DN] downloading - "+title+"1.mp3")
             audio = video.streams.filter(only_audio=True).first().download(filename=title.lower()+"1.mp3")
+
         else:
             logs.add_log('g', "[DF][DN] downloading skipped -> track already downloaded")
 
         return title+"1.mp3"
 
+    
 
     def search_yt(self,item):
         title = ""
 
-        if os.path.exists(self.path+item.lower()+"1.mp3"):
-            logs.add_log('g', "[DF][SY] File finden in path")
-            return {'source':'','title':item.lower()+"1.mp3"}
+        cache_check = self.cache.check(item)
+
+        if os.path.exists(self.path + item.lower() + "1.mp3"):
+            logs.add_log('g', "[DF][SY] File finden in path using name")
+            return {'source' : '','title' : item.lower()+"1.mp3"}
+        
+        if cache_check != None:
+            if os.path.exists(self.path + cache_check):
+                logs.add_log('g', "[DF][SY] File finden in path using cache")
+                return {'source' : '','title': cache_check}
             
 
         else:
             logs.add_log('w', "[DF][SY] File not finden in path")
 
-            with YDL(self.YDL_OPTIONS) as ydl:
-                try:
-                    if "https://" in item:
-                        info = ydl.extract_info(item, download = False)
-                        title = self.download(info['formats'][0]['url'])
+            try:
+                if "https://" in item:
+                    title = self.download(pt.YouTube(item))
+                    self.cache.add(item,title)
 
-                    else:
-                        info = ydl.extract_info(f"ytsearch:{item}", download = False)['entries'][0]
-                        title = self.download(info['formats'][0]['url'])
+                else:
+                    title = self.download(pt.Search(item).results[0])
+                    self.cache.add(item,title)
 
-                except Exception as e:
-                    logs.add_log('w', "[SY] Song dont downloaded " + str(e))
-                    return False
+            except Exception as e:
+                logs.add_log('w', "[SY] Song dont downloaded " + str(e))
+                return False
             
             logs.add_log('i', "[DF][SY] Song is ready - "+title)
-            return {'source':info['formats'][0]['url'],'title':title}
+            return {'source':"",'title':title}
             
     def play_next(self,ctx):
         logs.add_log('i', "[DF][PN] play_next called")
@@ -158,7 +181,7 @@ class music_client():
 
             logs.add_log('i', "[DF][PN] "+m_url+" is playing")
 
-            var = discord.FFmpegPCMAudio(source=m_url,executable="C:\\ffmpeg\\ffmpeg.exe")
+            var = discord.FFmpegPCMAudio(source=m_url,executable=cn.ffmpeg_path)
             self.is_playing = True
             self.vc.play(var,after=lambda e: self.play_next(ctx))
 
@@ -166,7 +189,7 @@ class music_client():
             logs.add_log('i', "[DF][PN] Run out of queue")
             self.is_playing = False
             self.is_paused = False
-            self.leave()
+
 
 
 
@@ -200,7 +223,7 @@ class music_client():
 
             logs.add_log('i', f"[DF][PM] Title: {m_url} is playing")
 
-            var = discord.FFmpegPCMAudio(source=m_url,executable="C:\\ffmpeg\\ffmpeg.exe")
+            var = discord.FFmpegPCMAudio(source=m_url,executable=cn.ffmpeg_path)
             self.is_playing = True
             self.vc.play(var,after=lambda e: self.play_next(ctx))
         else:

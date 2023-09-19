@@ -1,6 +1,7 @@
 import discord
 from discord.ext import commands
 import Config as cn
+import Logs as logs
 
 class help_cog(commands.Cog):
     def __init__(self,bot):
@@ -31,7 +32,7 @@ class help_cog(commands.Cog):
 
     @commands.command(name = "help",aliases = ["h"], help = "help")
     async def help(self,ctx):
-        print("[INF][CM][Help] help CALLED")
+        logs.add_log('i',"[CM][Help] help CALLED")
         url = await self.get_oauth_url()
         await ctx.send(self.help_message+'\n```'+url+'```')
 

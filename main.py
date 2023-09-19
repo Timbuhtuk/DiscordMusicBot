@@ -3,8 +3,10 @@ from discord.ext import commands
 
 import asyncio
 
-from music_cog import music_cog_arr
+from music_cog_copy import music_cog
 from help_cog import help_cog
+from utility_cog import utility_cog
+from dota_cog import dota_cog
 import Config
 
 intents = discord.Intents.all()
@@ -14,7 +16,9 @@ bot = commands.Bot(command_prefix=Config.command_tag,intents=intents,help_comman
 
 async def setup():
     await bot.add_cog(help_cog(bot))
-    await bot.add_cog(music_cog_arr(bot))
+    await bot.add_cog(music_cog(bot))
+    await bot.add_cog(utility_cog(bot))
+    await bot.add_cog(dota_cog(bot))
     print(bot.cogs)
     await bot.start(Config.token)
 
